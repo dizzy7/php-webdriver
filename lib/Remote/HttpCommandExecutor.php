@@ -241,18 +241,28 @@ class HttpCommandExecutor implements WebDriverCommandExecutor {
 
     curl_setopt($this->curl, CURLOPT_POSTFIELDS, $encoded_params);
 
-    $raw_results = trim(curl_exec($this->curl));
+      $tries = 3;
+      while ($tries > 0) {
+          $raw_results = trim(curl_exec($this->curl));
+          if (curl_error($this->curl)) {
+              $tries--;
 
-    if ($error = curl_error($this->curl)) {
-      $msg = sprintf(
-        'Curl error thrown for http %s to %s',
-        $http_method,
-        $url);
-      if ($params && is_array($params)) {
-        $msg .= sprintf(' with params: %s', json_encode($params));
+              continue;
+          }
+
+          break;
       }
-      WebDriverException::throwException(-1, $msg . "\n\n" . $error, array());
-    }
+
+      if ($error = curl_error($this->curl)) {
+          $msg = sprintf(
+              'Curl error thrown for http %s to %s',
+              $http_method,
+              $url);
+          if ($params && is_array($params)) {
+              $msg .= sprintf(' with params: %s', json_encode($params));
+          }
+          WebDriverException::throwException(-1, $msg . "\n\n" . $error, array());
+      }
 
     $results = json_decode($raw_results, true);
 
